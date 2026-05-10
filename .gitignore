@@ -1,0 +1,10 @@
+config/content-machine-config.json
+.env
+.env.*
+!.env.example
+outputs/*
+!outputs/.gitkeep
+*.log
+supabase/.temp
+supabase/.branches
+

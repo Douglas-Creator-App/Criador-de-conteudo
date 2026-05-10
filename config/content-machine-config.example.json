@@ -1,0 +1,22 @@
+{
+  "borapostar_api_key": "",
+  "instagram_username": "",
+  "ig_account_id": "",
+  "page_access_token": "",
+  "youtube_channel_id": "",
+  "gemini_api_key": "",
+  "scrapecreators_api_key": "",
+  "editor_base_url": "",
+  "approval_required": true,
+  "browser_automation": {
+    "provider": "browser-use",
+    "notes": "Use Browser Use/Codex browser for local navigation. Keep login, 2FA, captcha, and final publish confirmation manual unless user explicitly approves."
+  },
+  "platforms": {
+    "instagram": true,
+    "linkedin": true,
+    "youtube": true,
+    "tiktok": true
+  }
+}
+
