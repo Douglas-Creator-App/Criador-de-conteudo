@@ -6,6 +6,7 @@ const root = __dirname;
 const projectRoot = path.join(root, "..");
 const port = Number(process.env.PORT || 4173);
 const geminiModel = "gemini-2.5-flash";
+const calendarPath = path.join(projectRoot, "config", "calendar.json");
 
 const types = {
   ".html": "text/html; charset=utf-8",
@@ -269,6 +270,48 @@ function getOutputItems() {
     .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
 }
 
+function safeOutputPath(fileName) {
+  const outputsDir = path.join(projectRoot, "outputs");
+  const safeName = path.basename(String(fileName || ""));
+  if (!safeName.endsWith(".md")) {
+    return null;
+  }
+  return path.join(outputsDir, safeName);
+}
+
+function loadCalendar() {
+  const fallback = [
+    ["Seg", "Radar de noticias + 1 carrossel"],
+    ["Ter", "LinkedIn opinativo + comentario"],
+    ["Qua", "Shorts/Reels com case real"],
+    ["Qui", "Carrossel de dado concreto"],
+    ["Sex", "Post de bastidor/prova"],
+    ["Sab", "Teste de angulo"],
+    ["Dom", "Revisao de metricas"],
+  ].map(([day, task]) => ({ day, task }));
+
+  if (!fs.existsSync(calendarPath)) {
+    return fallback;
+  }
+
+  try {
+    const parsed = JSON.parse(fs.readFileSync(calendarPath, "utf8"));
+    return Array.isArray(parsed.days) ? parsed.days : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function saveCalendar(days) {
+  fs.mkdirSync(path.dirname(calendarPath), { recursive: true });
+  const cleanDays = days.map((item) => ({
+    day: String(item.day || "").trim().slice(0, 24),
+    task: String(item.task || "").trim().slice(0, 240),
+  })).filter((item) => item.day);
+  fs.writeFileSync(calendarPath, `${JSON.stringify({ days: cleanDays }, null, 2)}\n`, "utf8");
+  return cleanDays;
+}
+
 async function handleApi(request, response, requestUrl) {
   if (request.method === "GET" && requestUrl.pathname === "/api/status") {
     const config = loadConfig();
@@ -288,6 +331,37 @@ async function handleApi(request, response, requestUrl) {
 
   if (request.method === "GET" && requestUrl.pathname === "/api/outputs") {
     sendJson(response, 200, { items: getOutputItems() });
+    return true;
+  }
+
+  if (request.method === "GET" && requestUrl.pathname.startsWith("/api/outputs/")) {
+    const fileName = decodeURIComponent(requestUrl.pathname.replace("/api/outputs/", ""));
+    const filePath = safeOutputPath(fileName);
+    if (!filePath || !fs.existsSync(filePath)) {
+      sendJson(response, 404, { error: "Arquivo nao encontrado" });
+      return true;
+    }
+
+    sendJson(response, 200, {
+      name: path.basename(filePath),
+      markdown: fs.readFileSync(filePath, "utf8"),
+    });
+    return true;
+  }
+
+  if (request.method === "GET" && requestUrl.pathname === "/api/calendar") {
+    sendJson(response, 200, { days: loadCalendar() });
+    return true;
+  }
+
+  if (request.method === "POST" && requestUrl.pathname === "/api/calendar") {
+    try {
+      const payload = JSON.parse(await readBody(request));
+      const days = saveCalendar(Array.isArray(payload.days) ? payload.days : []);
+      sendJson(response, 200, { saved: true, days });
+    } catch (error) {
+      sendJson(response, 500, { error: error.message });
+    }
     return true;
   }
 

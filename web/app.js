@@ -43,16 +43,6 @@ const trends = [
   },
 ];
 
-const calendar = [
-  ["Seg", "Radar de noticias + 1 carrossel"],
-  ["Ter", "LinkedIn opinativo + comentario"],
-  ["Qua", "Shorts/Reels com case real"],
-  ["Qui", "Carrossel de dado concreto"],
-  ["Sex", "Post de bastidor/prova"],
-  ["Sab", "Teste de angulo"],
-  ["Dom", "Revisao de metricas"],
-];
-
 const state = {
   activeFilter: "all",
   theme: localStorage.getItem("viralradar-theme") || "dark",
@@ -205,22 +195,65 @@ async function renderPipeline() {
               <span class="tag">${card.type}</span>
               <span class="tag">${card.status}</span>
             </div>
+            <div class="card-actions">
+              <button class="secondary-button view-output-button" data-file="${card.name}" type="button">Visualizar</button>
+            </div>
           </article>
         `).join("") : `<p class="empty-column">Nada aqui ainda.</p>`}
       </section>
     `).join("");
+
+    qsa(".view-output-button").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.stopPropagation();
+        openOutput(button.dataset.file);
+      });
+    });
   } catch (error) {
     board.innerHTML = `<section class="kanban-column"><h3>Erro</h3><p class="empty-column">${error.message}</p></section>`;
   }
 }
 
-function renderCalendar() {
-  qs("#calendarGrid").innerHTML = calendar.map(([day, task]) => `
-    <article class="calendar-day">
-      <strong>${day}</strong>
-      <p>${task}</p>
-    </article>
-  `).join("");
+async function renderCalendar() {
+  try {
+    const { days } = await apiRequest("/api/calendar");
+    qs("#calendarGrid").innerHTML = days.map(({ day, task }) => `
+      <article class="calendar-day">
+        <strong>${day}</strong>
+        <textarea data-calendar-day="${day}" aria-label="Agenda de ${day}">${task}</textarea>
+      </article>
+    `).join("");
+  } catch (error) {
+    showToast(`Calendario indisponivel: ${error.message}`);
+  }
+}
+
+async function saveCalendar() {
+  const days = qsa("[data-calendar-day]").map((field) => ({
+    day: field.dataset.calendarDay,
+    task: field.value,
+  }));
+
+  try {
+    await apiRequest("/api/calendar", {
+      method: "POST",
+      body: JSON.stringify({ days }),
+    });
+    showToast("Calendario salvo.");
+  } catch (error) {
+    showToast(`Nao consegui salvar calendario: ${error.message}`);
+  }
+}
+
+async function openOutput(fileName) {
+  try {
+    const output = await apiRequest(`/api/outputs/${encodeURIComponent(fileName)}`);
+    qs("#dialogTitle").textContent = output.name;
+    qs("#dialogContent").textContent = output.markdown;
+    qs("#contentDialog").showModal();
+  } catch (error) {
+    showToast(`Nao consegui abrir: ${error.message}`);
+  }
 }
 
 function setView(viewName) {
@@ -429,6 +462,8 @@ qs("#briefForm").addEventListener("submit", buildBrief);
 qs("#configForm").addEventListener("submit", saveConfig);
 qs("#generateCarouselButton").addEventListener("click", generateCarousel);
 qs("#themeToggle").addEventListener("click", () => setTheme(state.theme === "dark" ? "light" : "dark"));
+qs("#saveCalendarButton").addEventListener("click", saveCalendar);
+qs("#closeDialogButton").addEventListener("click", () => qs("#contentDialog").close());
 
 setTheme(state.theme);
 renderTrends();

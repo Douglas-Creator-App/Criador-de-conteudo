@@ -175,6 +175,7 @@
               <p class="eyebrow">Agenda</p>
               <h2>Calendario editorial</h2>
             </div>
+            <button class="primary-button" id="saveCalendarButton" type="button">Salvar calendario</button>
           </div>
           <div class="calendar-grid" id="calendarGrid"></div>
         </section>
@@ -224,6 +225,16 @@
         </section>
       </main>
     </div>
+    <dialog class="content-dialog" id="contentDialog">
+      <div class="dialog-header">
+        <div>
+          <p class="eyebrow">Visualizacao</p>
+          <h2 id="dialogTitle">Conteudo</h2>
+        </div>
+        <button class="icon-button" id="closeDialogButton" type="button" title="Fechar">X</button>
+      </div>
+      <pre class="generated-output dialog-output" id="dialogContent"></pre>
+    </dialog>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
     <script src="./app.js"></script>
