@@ -63,6 +63,7 @@ const calendar = [
 const state = {
   activeFilter: "all",
   theme: localStorage.getItem("viralradar-theme") || "dark",
+  toastTimer: null,
 };
 
 const qs = (selector) => document.querySelector(selector);
@@ -72,6 +73,40 @@ function setTheme(theme) {
   state.theme = theme;
   document.body.classList.toggle("light", theme === "light");
   localStorage.setItem("viralradar-theme", theme);
+}
+
+function showToast(message) {
+  const toast = qs("#toast");
+  toast.textContent = message;
+  toast.classList.add("show");
+  clearTimeout(state.toastTimer);
+  state.toastTimer = setTimeout(() => toast.classList.remove("show"), 3200);
+}
+
+async function apiRequest(path, options = {}) {
+  const response = await fetch(path, {
+    headers: { "Content-Type": "application/json" },
+    ...options,
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || "Erro na API local");
+  }
+
+  return data;
+}
+
+async function refreshStatus() {
+  try {
+    const status = await apiRequest("/api/status");
+    qs("#carouselStatus").textContent = status.borapostarApiKey ? "Configurada" : "Aguardando API key";
+    qs("#draftCount").textContent = String(status.outputCount);
+    qs("#supabaseStatus").textContent = status.supabaseProjectRef ? "Conectado" : "Nao conectado";
+    qs("#readyCount").textContent = String(status.outputCount);
+  } catch (error) {
+    showToast(`Status indisponivel: ${error.message}`);
+  }
 }
 
 function renderTrends() {
@@ -89,8 +124,32 @@ function renderTrends() {
         <span class="tag">${trend.platform}</span>
         ${trend.tags.map((tag) => `<span class="tag">${tag}</span>`).join("")}
       </div>
+      <div class="card-actions">
+        <button class="secondary-button trend-brief-button" data-title="${trend.title}" data-platform="${trend.platform}" data-angle="${trend.angle}" type="button">Criar briefing</button>
+      </div>
     </article>
   `).join("");
+
+  qsa(".trend-brief-button").forEach((button) => {
+    button.addEventListener("click", () => {
+      qs("#briefTopic").value = button.dataset.title;
+      qs("#briefPlatform").value = platformLabel(button.dataset.platform);
+      qs("#briefAngle").value = button.dataset.angle;
+      setView("composer");
+      showToast("Tendencia enviada para o briefing.");
+    });
+  });
+}
+
+function platformLabel(platform) {
+  const labels = {
+    instagram: "Instagram carrossel",
+    linkedin: "LinkedIn post",
+    youtube: "YouTube Shorts",
+    tiktok: "TikTok",
+  };
+
+  return labels[platform] || "Instagram carrossel";
 }
 
 function renderPipeline() {
@@ -122,7 +181,7 @@ function setView(viewName) {
   qsa(".view").forEach((view) => view.classList.toggle("active", view.id === `view-${viewName}`));
 }
 
-function buildBrief(event) {
+async function buildBrief(event) {
   event.preventDefault();
 
   const topic = qs("#briefTopic").value.trim();
@@ -132,7 +191,7 @@ function buildBrief(event) {
   const level = qs("#viralLevel").value;
   const approval = qs("#approvalToggle").checked ? "Sim" : "Nao";
 
-  qs("#briefPreview").innerHTML = `
+  const preview = `
     <p class="eyebrow">Briefing gerado</p>
     <h3>${topic}</h3>
     <p><strong>Plataforma:</strong> ${platform}</p>
@@ -148,6 +207,28 @@ function buildBrief(event) {
     <p><strong>Intensidade viral:</strong> ${level}/10</p>
     <p><strong>Exigir aprovacao:</strong> ${approval}</p>
   `;
+
+  qs("#briefPreview").innerHTML = preview;
+
+  try {
+    const result = await apiRequest("/api/briefings", {
+      method: "POST",
+      body: JSON.stringify({
+        topic,
+        platform,
+        audience,
+        angle,
+        viralLevel: level,
+        approvalRequired: qs("#approvalToggle").checked,
+      }),
+    });
+
+    qs("#briefPreview").innerHTML = `${preview}<p><strong>Arquivo salvo:</strong> ${result.fileName}</p>`;
+    showToast("Briefing salvo em outputs.");
+    refreshStatus();
+  } catch (error) {
+    showToast(`Nao consegui salvar: ${error.message}`);
+  }
 }
 
 function drawRadar() {
@@ -244,4 +325,5 @@ setTheme(state.theme);
 renderTrends();
 renderPipeline();
 renderCalendar();
+refreshStatus();
 drawRadar();

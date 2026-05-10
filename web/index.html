@@ -43,7 +43,7 @@
             <h1>Seu radar de tendencias virais</h1>
           </div>
           <div class="topbar-actions">
-            <button class="icon-button" id="themeToggle" type="button" title="Alternar tema">◐</button>
+            <button class="icon-button" id="themeToggle" type="button" title="Alternar tema">T</button>
             <button class="primary-button" data-view-jump="composer" type="button">Novo briefing</button>
           </div>
         </header>
@@ -176,15 +176,17 @@
             <article class="settings-card">
               <h3>Integracoes</h3>
               <dl>
-                <div><dt>Supabase</dt><dd>Conectado</dd></div>
-                <div><dt>Carousel API</dt><dd>Aguardando API key</dd></div>
+                <div><dt>Supabase</dt><dd id="supabaseStatus">Conectado</dd></div>
+                <div><dt>Carousel API</dt><dd id="carouselStatus">Checando</dd></div>
                 <div><dt>Browser Use</dt><dd>Disponivel no Codex</dd></div>
+                <div><dt>Rascunhos locais</dt><dd id="draftCount">0</dd></div>
               </dl>
             </article>
           </div>
         </section>
       </main>
     </div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
     <script src="./app.js"></script>
   </body>
