@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ViralRadar</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Navegacao principal">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">
+            <span></span>
+          </div>
+          <div>
+            <strong>ViralRadar</strong>
+            <small>AI content intelligence</small>
+          </div>
+        </div>
+
+        <nav class="nav-list">
+          <button class="nav-item active" data-view="radar" type="button">Radar</button>
+          <button class="nav-item" data-view="pipeline" type="button">Pipeline</button>
+          <button class="nav-item" data-view="composer" type="button">Briefing</button>
+          <button class="nav-item" data-view="calendar" type="button">Calendario</button>
+          <button class="nav-item" data-view="settings" type="button">Config</button>
+        </nav>
+
+        <div class="sidebar-status">
+          <span class="status-dot"></span>
+          <div>
+            <strong>Supabase conectado</strong>
+            <small>qoveugouqjpmihslaeqk</small>
+          </div>
+        </div>
+      </aside>
+
+      <main class="workspace">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Creator OS</p>
+            <h1>Seu radar de tendencias virais</h1>
+          </div>
+          <div class="topbar-actions">
+            <button class="icon-button" id="themeToggle" type="button" title="Alternar tema">◐</button>
+            <button class="primary-button" data-view-jump="composer" type="button">Novo briefing</button>
+          </div>
+        </header>
+
+        <section class="hero-panel">
+          <canvas id="radarCanvas" width="920" height="360" aria-hidden="true"></canvas>
+          <div class="hero-copy">
+            <p class="eyebrow">ViralRadar score</p>
+            <h2>Detecte antes do mercado. Publique com angulo.</h2>
+            <p>Monitore sinais, transforme tendencias em carrosseis, posts e videos, e acompanhe cada ideia ate a publicacao.</p>
+          </div>
+          <div class="hero-metrics" aria-label="Metricas do radar">
+            <div>
+              <strong id="signalsCount">47</strong>
+              <span>sinais</span>
+            </div>
+            <div>
+              <strong id="shareScore">91</strong>
+              <span>share score</span>
+            </div>
+            <div>
+              <strong id="readyCount">8</strong>
+              <span>prontos</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="view active" id="view-radar">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Radar ao vivo</p>
+              <h2>Tendencias detectadas</h2>
+            </div>
+            <div class="segmented" role="tablist" aria-label="Filtro de plataformas">
+              <button class="segment active" data-filter="all" type="button">Tudo</button>
+              <button class="segment" data-filter="instagram" type="button">IG</button>
+              <button class="segment" data-filter="youtube" type="button">YT</button>
+              <button class="segment" data-filter="tiktok" type="button">TikTok</button>
+            </div>
+          </div>
+          <div class="trend-grid" id="trendGrid"></div>
+        </section>
+
+        <section class="view" id="view-pipeline">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Producao</p>
+              <h2>Pipeline de conteudo</h2>
+            </div>
+          </div>
+          <div class="kanban" id="pipelineBoard"></div>
+        </section>
+
+        <section class="view" id="view-composer">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Briefing</p>
+              <h2>Gerador de conteudo</h2>
+            </div>
+          </div>
+          <div class="composer-layout">
+            <form class="composer-form" id="briefForm">
+              <label>
+                Tema
+                <input id="briefTopic" name="topic" type="text" placeholder="Ex: IA para afiliados" required>
+              </label>
+              <label>
+                Plataforma
+                <select id="briefPlatform" name="platform">
+                  <option>Instagram carrossel</option>
+                  <option>LinkedIn post</option>
+                  <option>YouTube Shorts</option>
+                  <option>TikTok</option>
+                </select>
+              </label>
+              <label>
+                Publico
+                <input id="briefAudience" name="audience" type="text" placeholder="Creators, agencias, afiliados">
+              </label>
+              <label>
+                Angulo
+                <textarea id="briefAngle" name="angle" rows="5" placeholder="Case real + estrategia contraintuitiva + dado concreto"></textarea>
+              </label>
+              <div class="form-row">
+                <label>
+                  Intensidade viral
+                  <input id="viralLevel" type="range" min="1" max="10" value="8">
+                </label>
+                <label class="toggle-label">
+                  <input id="approvalToggle" type="checkbox" checked>
+                  Exigir aprovacao
+                </label>
+              </div>
+              <button class="primary-button" type="submit">Gerar briefing</button>
+            </form>
+            <article class="brief-preview" id="briefPreview">
+              <p class="eyebrow">Preview</p>
+              <h3>Escolha um tema para montar o briefing.</h3>
+              <p>O ViralRadar organiza a ideia em hook, dados, slides, CTA e proximos passos.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="view" id="view-calendar">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Agenda</p>
+              <h2>Calendario editorial</h2>
+            </div>
+          </div>
+          <div class="calendar-grid" id="calendarGrid"></div>
+        </section>
+
+        <section class="view" id="view-settings">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Sistema</p>
+              <h2>Configuracoes</h2>
+            </div>
+          </div>
+          <div class="settings-grid">
+            <article class="settings-card">
+              <h3>Marca</h3>
+              <dl>
+                <div><dt>Nome</dt><dd>ViralRadar</dd></div>
+                <div><dt>Posicionamento</dt><dd>IA que encontra tendencias virais</dd></div>
+                <div><dt>Mercado</dt><dd>Brasil, LATAM e global</dd></div>
+              </dl>
+            </article>
+            <article class="settings-card">
+              <h3>Integracoes</h3>
+              <dl>
+                <div><dt>Supabase</dt><dd>Conectado</dd></div>
+                <div><dt>Carousel API</dt><dd>Aguardando API key</dd></div>
+                <div><dt>Browser Use</dt><dd>Disponivel no Codex</dd></div>
+              </dl>
+            </article>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

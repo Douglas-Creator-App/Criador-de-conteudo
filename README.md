@@ -37,6 +37,22 @@ Agente local de conteudo para operar a maquina de conteudo no Codex/Windows.
 .\content-agent\content-agent.cmd draft youtube "tema ou url do video"
 ```
 
+## App ViralRadar
+
+Abra o app web em:
+
+```text
+web/index.html
+```
+
+Ou rode localmente:
+
+```powershell
+node web\server.js
+```
+
+O app inclui radar de tendencias, pipeline de conteudo, gerador de briefing, calendario editorial e tela de configuracoes.
+
 ## Fluxo recomendado
 
 1. Codex pesquisa/escreve o conteudo e salva um briefing em `outputs/`.
