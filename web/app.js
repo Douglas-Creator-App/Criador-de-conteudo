@@ -90,6 +90,10 @@ async function refreshStatus() {
     qs("#geminiSavedNote").textContent = status.geminiApiKey
       ? `Gemini salva: ${status.geminiApiKeyMasked}. O campo fica vazio por seguranca.`
       : "Cole a chave e salve. Depois ela fica mascarada por seguranca.";
+    qs("#apifyStatus").textContent = status.apifyToken ? status.apifyTokenMasked : "Aguardando token";
+    qs("#apifySavedNote").textContent = status.apifyToken
+      ? `Apify salvo: ${status.apifyTokenMasked}. O campo fica vazio por seguranca.`
+      : "Cole o token e salve. Depois ele fica mascarado por seguranca.";
     qs("#instagramUsername").value = status.instagramUsername || "";
     qs("#draftCount").textContent = String(status.outputCount);
     qs("#supabaseStatus").textContent = status.supabaseProjectRef ? "Conectado" : "Nao conectado";
@@ -104,11 +108,15 @@ async function saveConfig(event) {
 
   const geminiKey = qs("#geminiApiKey").value.trim();
   const instagramUsername = qs("#instagramUsername").value.trim();
+  const apifyToken = qs("#apifyToken").value.trim();
 
   try {
     const payload = {};
     if (geminiKey) {
       payload.gemini_api_key = geminiKey;
+    }
+    if (apifyToken) {
+      payload.apify_token = apifyToken;
     }
     payload.instagram_username = instagramUsername;
 
@@ -118,11 +126,16 @@ async function saveConfig(event) {
     });
 
     qs("#geminiApiKey").value = "";
+    qs("#apifyToken").value = "";
     qs("#geminiStatus").textContent = result.geminiApiKey ? result.geminiApiKeyMasked : "Aguardando API key";
     qs("#geminiSavedNote").textContent = result.geminiApiKey
       ? `Gemini salva: ${result.geminiApiKeyMasked}. O campo fica vazio por seguranca.`
       : "Cole a chave e salve. Depois ela fica mascarada por seguranca.";
     qs("#carouselStatus").textContent = result.borapostarApiKey ? "Configurada" : "Aguardando API key";
+    qs("#apifyStatus").textContent = result.apifyToken ? result.apifyTokenMasked : "Aguardando token";
+    qs("#apifySavedNote").textContent = result.apifyToken
+      ? `Apify salvo: ${result.apifyTokenMasked}. O campo fica vazio por seguranca.`
+      : "Cole o token e salve. Depois ele fica mascarado por seguranca.";
     showToast("Configuracao salva localmente.");
   } catch (error) {
     showToast(`Nao consegui salvar: ${error.message}`);
@@ -214,6 +227,16 @@ async function renderPipeline() {
     });
   } catch (error) {
     board.innerHTML = `<section class="kanban-column"><h3>Erro</h3><p class="empty-column">${error.message}</p></section>`;
+  }
+}
+
+async function testApifyConnection() {
+  try {
+    const result = await apiRequest("/api/apify/status");
+    qs("#apifyStatus").textContent = result.username ? `Conectado: ${result.username}` : "Conectado";
+    showToast("Apify conectado.");
+  } catch (error) {
+    showToast(`Apify falhou: ${error.message}`);
   }
 }
 
@@ -566,6 +589,7 @@ qsa(".segment").forEach((button) => {
 
 qs("#briefForm").addEventListener("submit", buildBrief);
 qs("#configForm").addEventListener("submit", saveConfig);
+qs("#testApifyButton").addEventListener("click", testApifyConnection);
 qs("#generateCarouselButton").addEventListener("click", generateCarousel);
 qs("#themeToggle").addEventListener("click", () => setTheme(state.theme === "dark" ? "light" : "dark"));
 qs("#saveCalendarButton").addEventListener("click", saveCalendar);

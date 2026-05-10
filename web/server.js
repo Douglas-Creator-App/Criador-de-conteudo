@@ -83,6 +83,7 @@ function saveConfigPatch(patch) {
     "gemini_api_key",
     "youtube_channel_id",
     "scrapecreators_api_key",
+    "apify_token",
   ];
 
   for (const field of allowedFields) {
@@ -324,6 +325,8 @@ async function handleApi(request, response, requestUrl) {
       instagramUsername: config.instagram_username || "",
       geminiApiKey: Boolean(config.gemini_api_key),
       geminiApiKeyMasked: maskSecret(config.gemini_api_key),
+      apifyToken: Boolean(config.apify_token),
+      apifyTokenMasked: maskSecret(config.apify_token),
       outputCount: outputItems.length,
     });
     return true;
@@ -375,6 +378,37 @@ async function handleApi(request, response, requestUrl) {
         instagramUsername: config.instagram_username || "",
         geminiApiKey: Boolean(config.gemini_api_key),
         geminiApiKeyMasked: maskSecret(config.gemini_api_key),
+        apifyToken: Boolean(config.apify_token),
+        apifyTokenMasked: maskSecret(config.apify_token),
+      });
+    } catch (error) {
+      sendJson(response, 500, { error: error.message });
+    }
+    return true;
+  }
+
+  if (request.method === "GET" && requestUrl.pathname === "/api/apify/status") {
+    try {
+      const config = loadConfig();
+      if (!config.apify_token) {
+        sendJson(response, 400, { error: "Apify token nao configurado" });
+        return true;
+      }
+
+      const apifyResponse = await fetch("https://api.apify.com/v2/users/me", {
+        headers: { Authorization: `Bearer ${config.apify_token}` },
+      });
+      const payload = await apifyResponse.json();
+
+      if (!apifyResponse.ok) {
+        sendJson(response, apifyResponse.status, { error: payload.error && payload.error.message ? payload.error.message : "Apify API error" });
+        return true;
+      }
+
+      sendJson(response, 200, {
+        connected: true,
+        username: payload.data && payload.data.username ? payload.data.username : "",
+        email: payload.data && payload.data.email ? payload.data.email : "",
       });
     } catch (error) {
       sendJson(response, 500, { error: error.message });

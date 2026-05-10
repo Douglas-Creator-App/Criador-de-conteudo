@@ -243,6 +243,7 @@
                 <div><dt>Supabase</dt><dd id="supabaseStatus">Conectado</dd></div>
                 <div><dt>Gerador de Carrossel</dt><dd id="carouselStatus">Checando</dd></div>
                 <div><dt>Gemini API</dt><dd id="geminiStatus">Checando</dd></div>
+                <div><dt>Apify</dt><dd id="apifyStatus">Checando</dd></div>
                 <div><dt>Browser Use</dt><dd>Disponivel no Codex</dd></div>
                 <div><dt>Rascunhos locais</dt><dd id="draftCount">0</dd></div>
               </dl>
@@ -259,8 +260,16 @@
                   Instagram
                   <input id="instagramUsername" name="instagram_username" type="text" placeholder="@seuusuario">
                 </label>
+                <label>
+                  Apify API Token
+                  <input id="apifyToken" name="apify_token" type="password" placeholder="apify_api_...">
+                  <small id="apifySavedNote" class="field-note">Cole o token e salve. Depois ele fica mascarado por segurança.</small>
+                </label>
                 <button class="primary-button" type="submit">Salvar configuracao</button>
               </form>
+              <div class="settings-actions">
+                <button class="secondary-button" id="testApifyButton" type="button">Testar Apify</button>
+              </div>
             </article>
           </div>
         </section>
