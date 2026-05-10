@@ -420,6 +420,10 @@ body.light .hero-panel {
   margin-top: 10px;
 }
 
+.preview-actions {
+  margin-top: 18px;
+}
+
 .secondary-button {
   min-height: 36px;
   border: 1px solid var(--line);
@@ -546,6 +550,18 @@ select:focus {
   padding-left: 20px;
   color: var(--muted);
   line-height: 1.7;
+}
+
+.generated-output {
+  max-height: 460px;
+  overflow: auto;
+  white-space: pre-wrap;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-2);
+  color: var(--text);
+  padding: 14px;
+  line-height: 1.55;
 }
 
 .calendar-grid {

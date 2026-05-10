@@ -5,6 +5,7 @@ const path = require("path");
 const root = __dirname;
 const projectRoot = path.join(root, "..");
 const port = Number(process.env.PORT || 4173);
+const geminiModel = "gemini-2.5-flash";
 
 const types = {
   ".html": "text/html; charset=utf-8",
@@ -145,6 +146,90 @@ ${data.angle}
 `;
 }
 
+function extractGeminiText(payload) {
+  return (payload.candidates || [])
+    .flatMap((candidate) => (candidate.content && candidate.content.parts) || [])
+    .map((part) => part.text || "")
+    .join("\n")
+    .trim();
+}
+
+async function callGemini(apiKey, prompt) {
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-goog-api-key": apiKey,
+    },
+    body: JSON.stringify({
+      system_instruction: {
+        parts: [
+          {
+            text: "Voce e o motor de conteudo do ViralRadar. Crie carrosseis em portugues do Brasil com estrategia contraintuitiva, dados a validar, slides curtos e CTA natural. Nunca afirme dado inventado como fato; quando necessario, marque como dado a validar.",
+          },
+        ],
+      },
+      contents: [
+        {
+          parts: [{ text: prompt }],
+        },
+      ],
+      generationConfig: {
+        temperature: 0.75,
+        maxOutputTokens: 2200,
+      },
+    }),
+  });
+
+  const payload = await response.json();
+  if (!response.ok) {
+    const message = payload.error && payload.error.message ? payload.error.message : "Gemini API error";
+    throw new Error(message);
+  }
+
+  return extractGeminiText(payload);
+}
+
+function buildCarouselPrompt(data) {
+  return `Crie um carrossel para o ViralRadar.
+
+Tema: ${data.topic}
+Publico: ${data.audience}
+Angulo: ${data.angle}
+Intensidade viral: ${data.viralLevel}/10
+
+Formato obrigatorio:
+
+# Carrossel
+
+## Slide 1
+Hook forte com contraste, dado ou promessa concreta.
+
+## Slide 2
+Contexto do erro comum.
+
+## Slide 3
+Virada contraintuitiva.
+
+## Slide 4
+Mecanismo pratico.
+
+## Slide 5
+Case real ou exemplo aplicavel, marcando "validar fonte" se nao houver fonte.
+
+## Slide 6
+Licao aplicavel.
+
+## Slide 7
+CTA natural.
+
+## Legenda
+Legenda com quebras de linha.
+
+## Checklist de validacao
+Liste os dados/fatos que precisam ser verificados antes de publicar.`;
+}
+
 async function handleApi(request, response, requestUrl) {
   if (request.method === "GET" && requestUrl.pathname === "/api/status") {
     const config = loadConfig();
@@ -207,6 +292,47 @@ async function handleApi(request, response, requestUrl) {
       const filePath = path.join(outputsDir, fileName);
       const markdown = buildBriefingMarkdown(data);
       fs.writeFileSync(filePath, markdown, "utf8");
+
+      sendJson(response, 201, {
+        fileName,
+        filePath,
+        markdown,
+      });
+    } catch (error) {
+      sendJson(response, 500, { error: error.message });
+    }
+    return true;
+  }
+
+  if (request.method === "POST" && requestUrl.pathname === "/api/carousels/generate") {
+    try {
+      const config = loadConfig();
+      if (!config.gemini_api_key) {
+        sendJson(response, 400, { error: "Gemini API key nao configurada" });
+        return true;
+      }
+
+      const payload = JSON.parse(await readBody(request));
+      const topic = String(payload.topic || "").trim();
+      if (!topic) {
+        sendJson(response, 400, { error: "Tema obrigatorio" });
+        return true;
+      }
+
+      const data = {
+        topic,
+        audience: String(payload.audience || "creators, agencias e infoprodutores").trim(),
+        angle: String(payload.angle || "Case real + estrategia contraintuitiva + dado concreto").trim(),
+        viralLevel: Number(payload.viralLevel || 8),
+      };
+
+      const markdown = await callGemini(config.gemini_api_key, buildCarouselPrompt(data));
+      const outputsDir = path.join(projectRoot, "outputs");
+      fs.mkdirSync(outputsDir, { recursive: true });
+      const stamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\..+/, "").replace("T", "-");
+      const fileName = `${stamp}-gemini-carousel-${slugify(topic)}.md`;
+      const filePath = path.join(outputsDir, fileName);
+      fs.writeFileSync(filePath, `${markdown}\n`, "utf8");
 
       sendJson(response, 201, {
         fileName,

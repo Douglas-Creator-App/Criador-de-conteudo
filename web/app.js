@@ -100,7 +100,7 @@ async function apiRequest(path, options = {}) {
 async function refreshStatus() {
   try {
     const status = await apiRequest("/api/status");
-    qs("#carouselStatus").textContent = status.borapostarApiKey ? "Configurada" : "Aguardando API key";
+    qs("#carouselStatus").textContent = status.geminiApiKey ? "Pronto via Gemini" : "Aguardando Gemini";
     qs("#geminiStatus").textContent = status.geminiApiKey ? status.geminiApiKeyMasked : "Aguardando API key";
     qs("#geminiSavedNote").textContent = status.geminiApiKey
       ? `Gemini salva: ${status.geminiApiKeyMasked}. O campo fica vazio por seguranca.`
@@ -266,6 +266,64 @@ async function buildBrief(event) {
   }
 }
 
+async function generateCarousel() {
+  const topic = qs("#briefTopic").value.trim();
+  const audience = qs("#briefAudience").value.trim() || "creators, agencias e infoprodutores";
+  const angle = qs("#briefAngle").value.trim() || "Case real + estrategia contraintuitiva + dado concreto";
+  const viralLevel = qs("#viralLevel").value;
+
+  if (!topic) {
+    showToast("Informe um tema antes de gerar o carrossel.");
+    setView("composer");
+    qs("#briefTopic").focus();
+    return;
+  }
+
+  const button = qs("#generateCarouselButton");
+  button.disabled = true;
+  button.textContent = "Gerando...";
+  showToast("Gerando carrossel com Gemini.");
+
+  try {
+    const result = await apiRequest("/api/carousels/generate", {
+      method: "POST",
+      body: JSON.stringify({ topic, audience, angle, viralLevel }),
+    });
+
+    qs("#briefPreview").innerHTML = `
+      <p class="eyebrow">Carrossel gerado</p>
+      <h3>${topic}</h3>
+      <p><strong>Arquivo salvo:</strong> ${result.fileName}</p>
+      <pre class="generated-output">${escapeHtml(result.markdown)}</pre>
+      <div class="preview-actions">
+        <button class="secondary-button" id="generateCarouselButton" type="button">Gerar outra versao</button>
+      </div>
+    `;
+    qs("#generateCarouselButton").addEventListener("click", generateCarousel);
+    showToast("Carrossel salvo em outputs.");
+    refreshStatus();
+  } catch (error) {
+    showToast(`Gemini falhou: ${error.message}`);
+  } finally {
+    const freshButton = qs("#generateCarouselButton");
+    if (freshButton) {
+      freshButton.disabled = false;
+      if (freshButton.textContent === "Gerando...") {
+        freshButton.textContent = "Gerar carrossel com Gemini";
+      }
+    }
+  }
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 function drawRadar() {
   const canvas = qs("#radarCanvas");
   const ctx = canvas.getContext("2d");
@@ -355,6 +413,7 @@ qsa(".segment").forEach((button) => {
 
 qs("#briefForm").addEventListener("submit", buildBrief);
 qs("#configForm").addEventListener("submit", saveConfig);
+qs("#generateCarouselButton").addEventListener("click", generateCarousel);
 qs("#themeToggle").addEventListener("click", () => setTheme(state.theme === "dark" ? "light" : "dark"));
 
 setTheme(state.theme);
