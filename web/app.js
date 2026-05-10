@@ -102,6 +102,9 @@ async function refreshStatus() {
     const status = await apiRequest("/api/status");
     qs("#carouselStatus").textContent = status.borapostarApiKey ? "Configurada" : "Aguardando API key";
     qs("#geminiStatus").textContent = status.geminiApiKey ? status.geminiApiKeyMasked : "Aguardando API key";
+    qs("#geminiSavedNote").textContent = status.geminiApiKey
+      ? `Gemini salva: ${status.geminiApiKeyMasked}. O campo fica vazio por seguranca.`
+      : "Cole a chave e salve. Depois ela fica mascarada por seguranca.";
     qs("#instagramUsername").value = status.instagramUsername || "";
     qs("#draftCount").textContent = String(status.outputCount);
     qs("#supabaseStatus").textContent = status.supabaseProjectRef ? "Conectado" : "Nao conectado";
@@ -131,6 +134,9 @@ async function saveConfig(event) {
 
     qs("#geminiApiKey").value = "";
     qs("#geminiStatus").textContent = result.geminiApiKey ? result.geminiApiKeyMasked : "Aguardando API key";
+    qs("#geminiSavedNote").textContent = result.geminiApiKey
+      ? `Gemini salva: ${result.geminiApiKeyMasked}. O campo fica vazio por seguranca.`
+      : "Cole a chave e salve. Depois ela fica mascarada por seguranca.";
     qs("#carouselStatus").textContent = result.borapostarApiKey ? "Configurada" : "Aguardando API key";
     showToast("Configuracao salva localmente.");
   } catch (error) {

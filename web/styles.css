@@ -124,6 +124,9 @@ button {
   background: transparent;
   text-align: left;
   padding: 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .nav-item:hover,
@@ -131,6 +134,33 @@ button {
   color: var(--text);
   background: var(--panel-2);
   border-color: var(--line);
+}
+
+.nav-icon {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--panel-2) 80%, var(--accent) 20%);
+  border: 1px solid var(--line);
+}
+
+.nav-icon svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.nav-item.active .nav-icon {
+  color: #06100d;
+  background: var(--accent);
+  border-color: transparent;
 }
 
 .sidebar-status {
@@ -461,6 +491,13 @@ label {
   color: var(--muted);
   font-size: 13px;
   font-weight: 700;
+}
+
+.field-note {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.45;
 }
 
 input,

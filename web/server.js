@@ -17,7 +17,10 @@ const types = {
 };
 
 function sendJson(response, statusCode, payload) {
-  response.writeHead(statusCode, { "Content-Type": "application/json; charset=utf-8" });
+  response.writeHead(statusCode, {
+    "Content-Type": "application/json; charset=utf-8",
+    "Cache-Control": "no-store",
+  });
   response.end(JSON.stringify(payload, null, 2));
 }
 
@@ -237,7 +240,10 @@ const server = http.createServer((request, response) => {
         return;
       }
 
-      response.writeHead(200, { "Content-Type": types[path.extname(filePath)] || "application/octet-stream" });
+      response.writeHead(200, {
+        "Content-Type": types[path.extname(filePath)] || "application/octet-stream",
+        "Cache-Control": "no-store",
+      });
       response.end(data);
     });
   }).catch((error) => {
