@@ -358,7 +358,8 @@ body.light .hero-metrics {
 .brief-preview,
 .composer-form,
 .settings-card,
-.calendar-day {
+.calendar-day,
+.studio-panel {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--panel);
@@ -488,6 +489,116 @@ body.light .hero-metrics {
   display: grid;
   grid-template-columns: minmax(320px, 0.9fr) minmax(0, 1.1fr);
   gap: 16px;
+}
+
+.studio-layout {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: 16px;
+}
+
+.studio-panel {
+  padding: 18px;
+  display: grid;
+  gap: 14px;
+  align-self: start;
+}
+
+.slides-stage {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.slide-card {
+  aspect-ratio: 4 / 5;
+  min-height: 420px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  overflow: hidden;
+  position: relative;
+  background: #160c06;
+  color: #ffffff;
+  box-shadow: var(--shadow);
+}
+
+.slide-art {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 78% 18%, rgba(255, 204, 102, 0.78), transparent 18%),
+    radial-gradient(circle at 18% 76%, rgba(255, 107, 122, 0.48), transparent 22%),
+    linear-gradient(145deg, #160c06, #3a1d0b 52%, #ff8a3d);
+}
+
+.slide-card[data-style="sunset"] .slide-art {
+  background:
+    radial-gradient(circle at 72% 20%, rgba(255, 238, 184, 0.86), transparent 18%),
+    linear-gradient(145deg, #331006, #c24d1a 54%, #ffb35b);
+}
+
+.slide-card[data-style="clean"] {
+  color: #111827;
+}
+
+.slide-card[data-style="clean"] .slide-art {
+  background:
+    radial-gradient(circle at 82% 16%, rgba(255, 138, 61, 0.28), transparent 20%),
+    linear-gradient(145deg, #fff8f2, #f6f7f9);
+}
+
+.slide-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.62));
+}
+
+.slide-card[data-style="clean"] .slide-overlay {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.7));
+}
+
+.slide-content {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+}
+
+.slide-kicker {
+  color: var(--accent-2);
+  font-size: 13px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.slide-title {
+  margin: auto 0 16px;
+  font-size: clamp(28px, 4vw, 48px);
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.slide-body {
+  margin: 0;
+  font-size: clamp(16px, 2vw, 22px);
+  line-height: 1.25;
+}
+
+.slide-footer {
+  margin-top: auto;
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.slide-card[data-style="clean"] .slide-footer,
+.slide-card[data-style="clean"] .slide-kicker {
+  color: #c45112;
 }
 
 .composer-form,
@@ -720,6 +831,7 @@ dd {
   .trend-grid,
   .kanban,
   .composer-layout,
+  .studio-layout,
   .settings-grid,
   .settings-form {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -770,9 +882,14 @@ dd {
   .trend-grid,
   .kanban,
   .composer-layout,
+  .studio-layout,
   .settings-grid,
   .settings-form,
   .calendar-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .slides-stage {
     grid-template-columns: 1fr;
   }
 }

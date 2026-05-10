@@ -38,6 +38,12 @@
             </span>
             Briefing
           </button>
+          <button class="nav-item" data-view="studio" type="button">
+            <span class="nav-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14"></rect><path d="M8 9h8M8 13h5M16 16l2 3"></path></svg>
+            </span>
+            Estúdio
+          </button>
           <button class="nav-item" data-view="calendar" type="button">
             <span class="nav-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="14"></rect><path d="M8 4v4M16 4v4M4 10h16"></path></svg>
@@ -166,6 +172,41 @@
                 <button class="secondary-button" id="generateCarouselButton" type="button">Gerar carrossel com Gemini</button>
               </div>
             </article>
+          </div>
+        </section>
+
+        <section class="view" id="view-studio">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Estúdio</p>
+              <h2>Slides visuais</h2>
+            </div>
+            <div class="topbar-actions">
+              <button class="secondary-button" id="renderSlidesButton" type="button">Gerar preview</button>
+              <button class="primary-button" id="exportSlidesButton" type="button">Exportar</button>
+            </div>
+          </div>
+          <div class="studio-layout">
+            <aside class="studio-panel">
+              <label>
+                Conteúdo
+                <select id="studioSource"></select>
+              </label>
+              <label>
+                Estilo visual
+                <select id="studioStyle">
+                  <option value="radar">Radar premium</option>
+                  <option value="sunset">Laranja editorial</option>
+                  <option value="clean">Claro limpo</option>
+                </select>
+              </label>
+              <label>
+                Imagem/tema base
+                <input id="studioImagePrompt" type="text" placeholder="Ex: creator analisando tendências em uma tela">
+              </label>
+              <p class="field-note">Primeira versão: texto + fundo visual no navegador. Próximo passo: gerar imagens por slide com Gemini Image.</p>
+            </aside>
+            <div class="slides-stage" id="slidesStage"></div>
           </div>
         </section>
 

@@ -47,6 +47,7 @@ const state = {
   activeFilter: "all",
   theme: localStorage.getItem("viralradar-theme") || "dark",
   toastTimer: null,
+  outputs: [],
 };
 
 const qs = (selector) => document.querySelector(selector);
@@ -177,6 +178,8 @@ async function renderPipeline() {
 
   try {
     const { items } = await apiRequest("/api/outputs");
+    state.outputs = items;
+    renderStudioOptions();
     const groups = {
       "Briefings": items.filter((item) => item.type === "Briefing"),
       "Carrosseis": items.filter((item) => item.type === "Carrossel"),
@@ -212,6 +215,17 @@ async function renderPipeline() {
   } catch (error) {
     board.innerHTML = `<section class="kanban-column"><h3>Erro</h3><p class="empty-column">${error.message}</p></section>`;
   }
+}
+
+function renderStudioOptions() {
+  const select = qs("#studioSource");
+  if (!select) {
+    return;
+  }
+
+  select.innerHTML = state.outputs.map((item) => `
+    <option value="${item.name}">${item.type} - ${item.title}</option>
+  `).join("");
 }
 
 async function renderCalendar() {
@@ -254,6 +268,98 @@ async function openOutput(fileName) {
   } catch (error) {
     showToast(`Nao consegui abrir: ${error.message}`);
   }
+}
+
+function cleanSlideText(value) {
+  return String(value || "")
+    .replace(/^[-*]\s*/, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function parseSlides(markdown) {
+  const blocks = markdown.split(/(?=^##\s+Slide\s+\d+)/gmi)
+    .filter((block) => /^##\s+Slide\s+\d+/i.test(block));
+
+  if (blocks.length) {
+    return blocks.slice(0, 10).map((block, index) => {
+      const lines = block.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+      const heading = lines.shift() || `Slide ${index + 1}`;
+      const titleLine = lines.find((line) => /t[ií]tulo/i.test(line)) || lines[0] || heading;
+      const bodyLine = lines.find((line) => /texto/i.test(line)) || lines.slice(1).join(" ");
+      return {
+        number: index + 1,
+        title: cleanSlideText(titleLine.replace(/\*\*/g, "").replace(/t[ií]tulo:\s*/i, "")),
+        body: cleanSlideText((bodyLine || "").replace(/\*\*/g, "").replace(/texto:\s*/i, "")),
+      };
+    });
+  }
+
+  const topic = (markdown.match(/^Tema:\s*(.+)$/m) || markdown.match(/^#\s+(.+)$/m) || [null, "Conteudo Viral"])[1];
+  const angle = (markdown.match(/^## Angulo\s+([\s\S]*?)\n##/m) || [null, "Transforme este tema em um carrossel com promessa clara, dado concreto e CTA natural."])[1];
+  return [
+    { number: 1, title: topic, body: "O que todo mundo esta ignorando sobre este assunto." },
+    { number: 2, title: "O erro comum", body: cleanSlideText(angle).slice(0, 140) },
+    { number: 3, title: "A virada", body: "A oportunidade esta no mecanismo, nao no volume de posts." },
+    { number: 4, title: "Como aplicar", body: "Use um case real, um dado forte e uma conclusao compartilhavel." },
+    { number: 5, title: "Proximo passo", body: "Valide as fontes, aprove o texto e publique com consistencia." },
+  ];
+}
+
+async function renderStudioSlides() {
+  const fileName = qs("#studioSource").value;
+  if (!fileName) {
+    showToast("Nenhum conteudo no Pipeline ainda.");
+    return;
+  }
+
+  try {
+    const output = await apiRequest(`/api/outputs/${encodeURIComponent(fileName)}`);
+    const style = qs("#studioStyle").value;
+    const slides = parseSlides(output.markdown);
+    qs("#slidesStage").innerHTML = slides.map((slide) => `
+      <article class="slide-card" data-style="${style}">
+        <div class="slide-art"></div>
+        <div class="slide-overlay"></div>
+        <div class="slide-content">
+          <div class="slide-kicker">ViralRadar / ${String(slide.number).padStart(2, "0")}</div>
+          <h3 class="slide-title">${escapeHtml(slide.title)}</h3>
+          <p class="slide-body">${escapeHtml(slide.body)}</p>
+          <div class="slide-footer"><span>viralradar.ai</span><span>share score</span></div>
+        </div>
+      </article>
+    `).join("");
+    showToast("Preview visual gerado.");
+  } catch (error) {
+    showToast(`Nao consegui gerar preview: ${error.message}`);
+  }
+}
+
+function exportSlides() {
+  const slides = qsa(".slide-card");
+  if (!slides.length) {
+    showToast("Gere o preview antes de exportar.");
+    return;
+  }
+
+  const oldPrintStyle = document.getElementById("printSlidesStyle");
+  if (oldPrintStyle) {
+    oldPrintStyle.remove();
+  }
+
+  const style = document.createElement("style");
+  style.id = "printSlidesStyle";
+  style.textContent = `
+    @media print {
+      body * { visibility: hidden; }
+      #slidesStage, #slidesStage * { visibility: visible; }
+      #slidesStage { position: absolute; inset: 0; display: block; }
+      .slide-card { page-break-after: always; width: 1080px; height: 1350px; margin: 0; }
+    }
+  `;
+  document.head.appendChild(style);
+  window.print();
+  showToast("Use a janela de impressao para salvar o material.");
 }
 
 function setView(viewName) {
@@ -464,6 +570,8 @@ qs("#generateCarouselButton").addEventListener("click", generateCarousel);
 qs("#themeToggle").addEventListener("click", () => setTheme(state.theme === "dark" ? "light" : "dark"));
 qs("#saveCalendarButton").addEventListener("click", saveCalendar);
 qs("#closeDialogButton").addEventListener("click", () => qs("#contentDialog").close());
+qs("#renderSlidesButton").addEventListener("click", renderStudioSlides);
+qs("#exportSlidesButton").addEventListener("click", exportSlides);
 
 setTheme(state.theme);
 renderTrends();
