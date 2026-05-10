@@ -6,7 +6,7 @@
   --line: rgba(255, 255, 255, 0.1);
   --text: #eef4f8;
   --muted: #94a3ad;
-  --accent: #4ee3b5;
+  --accent: #ff8a3d;
   --accent-2: #ffcc66;
   --accent-3: #ff6b7a;
   --blue: #5bb7ff;
@@ -66,7 +66,6 @@ button {
 }
 
 .brand,
-.sidebar-status,
 .section-heading,
 .topbar,
 .topbar-actions,
@@ -86,7 +85,7 @@ button {
 }
 
 .brand small,
-.sidebar-status small {
+.brand small {
   display: block;
   color: var(--muted);
   margin-top: 2px;
@@ -99,7 +98,7 @@ button {
   border-radius: 8px;
   display: grid;
   place-items: center;
-  background: radial-gradient(circle, rgba(78, 227, 181, 0.28), transparent 62%);
+  background: radial-gradient(circle, rgba(255, 138, 61, 0.28), transparent 62%);
 }
 
 .brand-mark span {
@@ -161,15 +160,6 @@ button {
   color: #06100d;
   background: var(--accent);
   border-color: transparent;
-}
-
-.sidebar-status {
-  margin-top: auto;
-  gap: 10px;
-  padding: 14px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--panel-2);
 }
 
 .status-dot {
@@ -243,13 +233,13 @@ button {
   min-height: 320px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #07100f;
+  background: #120c08;
   box-shadow: var(--shadow);
   margin-bottom: 28px;
 }
 
 body.light .hero-panel {
-  background: #09211c;
+  background: #fff2e9;
 }
 
 #radarCanvas {
@@ -274,7 +264,7 @@ body.light .hero-panel {
 }
 
 .hero-copy p:last-child {
-  color: #c6d5d1;
+  color: #f1d2bd;
   max-width: 560px;
   line-height: 1.6;
 }
@@ -305,7 +295,7 @@ body.light .hero-panel {
 }
 
 .hero-metrics span {
-  color: #b8c9c5;
+  color: #f1d2bd;
   font-size: 12px;
 }
 
@@ -470,6 +460,12 @@ body.light .hero-panel {
 
 .pipeline-card h3 {
   font-size: 15px;
+}
+
+.empty-column {
+  color: var(--muted);
+  line-height: 1.5;
+  margin: 8px 4px;
 }
 
 .composer-layout {
@@ -666,10 +662,6 @@ dd {
     grid-auto-columns: minmax(110px, 1fr);
     overflow-x: auto;
     width: 100%;
-  }
-
-  .sidebar-status {
-    margin-top: 0;
   }
 
   .trend-grid,

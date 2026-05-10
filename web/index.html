@@ -51,14 +51,6 @@
             Configurações
           </button>
         </nav>
-
-        <div class="sidebar-status">
-          <span class="status-dot"></span>
-          <div>
-            <strong>Supabase conectado</strong>
-            <small>qoveugouqjpmihslaeqk</small>
-          </div>
-        </div>
       </aside>
 
       <main class="workspace">
@@ -68,7 +60,9 @@
             <h1>Seu radar de tendencias virais</h1>
           </div>
           <div class="topbar-actions">
-            <button class="icon-button" id="themeToggle" type="button" title="Alternar tema">T</button>
+            <button class="icon-button" id="themeToggle" type="button" title="Alternar tema" aria-label="Alternar tema">
+              <span id="themeIcon">☾</span>
+            </button>
             <button class="primary-button" data-view-jump="composer" type="button">Novo briefing</button>
           </div>
         </header>

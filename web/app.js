@@ -43,13 +43,6 @@ const trends = [
   },
 ];
 
-const pipeline = {
-  "Ideias": ["IA para afiliados", "Radar de tendencias para agencias", "Comentario fixado como funil"],
-  "Briefing": ["Carrossel: ferramenta vs departamento", "LinkedIn: agencia que vende inteligencia"],
-  "Aprovacao": ["YouTube: titulo + thumbnail A/B"],
-  "Publicado": ["Post: ViralRadar manifesto", "Carrossel: por que conteudo generico morre"],
-};
-
 const calendar = [
   ["Seg", "Radar de noticias + 1 carrossel"],
   ["Ter", "LinkedIn opinativo + comentario"],
@@ -72,6 +65,7 @@ const qsa = (selector) => [...document.querySelectorAll(selector)];
 function setTheme(theme) {
   state.theme = theme;
   document.body.classList.toggle("light", theme === "light");
+  qs("#themeIcon").textContent = theme === "light" ? "☀" : "☾";
   localStorage.setItem("viralradar-theme", theme);
 }
 
@@ -187,19 +181,37 @@ function platformLabel(platform) {
   return labels[platform] || "Instagram carrossel";
 }
 
-function renderPipeline() {
+async function renderPipeline() {
   const board = qs("#pipelineBoard");
-  board.innerHTML = Object.entries(pipeline).map(([column, cards]) => `
-    <section class="kanban-column">
-      <h3>${column}</h3>
-      ${cards.map((card) => `
-        <article class="pipeline-card">
-          <h3>${card}</h3>
-          <p>Score alto, precisa de dado concreto e aprovacao antes de publicar.</p>
-        </article>
-      `).join("")}
-    </section>
-  `).join("");
+  board.innerHTML = `<section class="kanban-column"><h3>Carregando</h3></section>`;
+
+  try {
+    const { items } = await apiRequest("/api/outputs");
+    const groups = {
+      "Briefings": items.filter((item) => item.type === "Briefing"),
+      "Carrosseis": items.filter((item) => item.type === "Carrossel"),
+      "Aprovacao": items.filter((item) => /aprov/i.test(item.status)),
+      "Recentes": items.slice(0, 6),
+    };
+
+    board.innerHTML = Object.entries(groups).map(([column, cards]) => `
+      <section class="kanban-column">
+        <h3>${column}</h3>
+        ${cards.length ? cards.map((card) => `
+          <article class="pipeline-card">
+            <h3>${card.title}</h3>
+            <p>${card.preview}</p>
+            <div class="tag-row">
+              <span class="tag">${card.type}</span>
+              <span class="tag">${card.status}</span>
+            </div>
+          </article>
+        `).join("") : `<p class="empty-column">Nada aqui ainda.</p>`}
+      </section>
+    `).join("");
+  } catch (error) {
+    board.innerHTML = `<section class="kanban-column"><h3>Erro</h3><p class="empty-column">${error.message}</p></section>`;
+  }
 }
 
 function renderCalendar() {
@@ -261,6 +273,7 @@ async function buildBrief(event) {
     qs("#briefPreview").innerHTML = `${preview}<p><strong>Arquivo salvo:</strong> ${result.fileName}</p>`;
     showToast("Briefing salvo em outputs.");
     refreshStatus();
+    renderPipeline();
   } catch (error) {
     showToast(`Nao consegui salvar: ${error.message}`);
   }
@@ -302,6 +315,7 @@ async function generateCarousel() {
     qs("#generateCarouselButton").addEventListener("click", generateCarousel);
     showToast("Carrossel salvo em outputs.");
     refreshStatus();
+    renderPipeline();
   } catch (error) {
     showToast(`Gemini falhou: ${error.message}`);
   } finally {
@@ -340,12 +354,12 @@ function drawRadar() {
     const radius = Math.min(width, height) * 0.42;
 
     const gradient = ctx.createLinearGradient(0, 0, width, height);
-    gradient.addColorStop(0, "#07100f");
-    gradient.addColorStop(1, "#102233");
+    gradient.addColorStop(0, "#160c06");
+    gradient.addColorStop(1, "#2a180e");
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, width, height);
 
-    ctx.strokeStyle = "rgba(78, 227, 181, 0.22)";
+    ctx.strokeStyle = "rgba(255, 138, 61, 0.24)";
     ctx.lineWidth = 1;
     for (let ring = 1; ring <= 4; ring += 1) {
       ctx.beginPath();
@@ -363,8 +377,8 @@ function drawRadar() {
 
     const sweep = tick * Math.PI * 2;
     const sweepGradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
-    sweepGradient.addColorStop(0, "rgba(78, 227, 181, 0.36)");
-    sweepGradient.addColorStop(1, "rgba(78, 227, 181, 0)");
+    sweepGradient.addColorStop(0, "rgba(255, 138, 61, 0.38)");
+    sweepGradient.addColorStop(1, "rgba(255, 138, 61, 0)");
     ctx.fillStyle = sweepGradient;
     ctx.beginPath();
     ctx.moveTo(cx, cy);
@@ -373,11 +387,11 @@ function drawRadar() {
     ctx.fill();
 
     const dots = [
-      [0.18, 0.72, "#4ee3b5"],
+      [0.18, 0.72, "#ff8a3d"],
       [0.48, 0.35, "#ffcc66"],
       [0.73, 0.62, "#5bb7ff"],
       [0.58, 0.78, "#ff6b7a"],
-      [0.84, 0.38, "#4ee3b5"],
+      [0.84, 0.38, "#ff8a3d"],
     ];
 
     dots.forEach(([x, y, color], index) => {

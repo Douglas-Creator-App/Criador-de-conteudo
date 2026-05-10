@@ -230,13 +230,49 @@ Legenda com quebras de linha.
 Liste os dados/fatos que precisam ser verificados antes de publicar.`;
 }
 
+function titleFromMarkdown(markdown, fileName) {
+  const titleMatch = markdown.match(/^Tema:\s*(.+)$/m) || markdown.match(/^#\s+(.+)$/m);
+  if (titleMatch) {
+    return titleMatch[1].trim();
+  }
+
+  return fileName
+    .replace(/^\d{8}-\d{6}-/, "")
+    .replace(/\.md$/, "")
+    .replace(/-/g, " ");
+}
+
+function getOutputItems() {
+  const outputsDir = path.join(projectRoot, "outputs");
+  if (!fs.existsSync(outputsDir)) {
+    return [];
+  }
+
+  return fs.readdirSync(outputsDir)
+    .filter((name) => name.endsWith(".md"))
+    .map((name) => {
+      const filePath = path.join(outputsDir, name);
+      const stat = fs.statSync(filePath);
+      const markdown = fs.readFileSync(filePath, "utf8");
+      const isCarousel = name.includes("carousel") || /^# Carrossel/m.test(markdown);
+      const statusMatch = markdown.match(/^Status:\s*(.+)$/m);
+      return {
+        name,
+        title: titleFromMarkdown(markdown, name),
+        type: isCarousel ? "Carrossel" : "Briefing",
+        status: statusMatch ? statusMatch[1].trim() : isCarousel ? "gerado" : "rascunho",
+        size: stat.size,
+        updatedAt: stat.mtime.toISOString(),
+        preview: markdown.replace(/\s+/g, " ").trim().slice(0, 160),
+      };
+    })
+    .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+}
+
 async function handleApi(request, response, requestUrl) {
   if (request.method === "GET" && requestUrl.pathname === "/api/status") {
     const config = loadConfig();
-    const outputsDir = path.join(projectRoot, "outputs");
-    const outputFiles = fs.existsSync(outputsDir)
-      ? fs.readdirSync(outputsDir).filter((name) => name.endsWith(".md"))
-      : [];
+    const outputItems = getOutputItems();
 
     sendJson(response, 200, {
       app: "ViralRadar",
@@ -245,8 +281,13 @@ async function handleApi(request, response, requestUrl) {
       instagramUsername: config.instagram_username || "",
       geminiApiKey: Boolean(config.gemini_api_key),
       geminiApiKeyMasked: maskSecret(config.gemini_api_key),
-      outputCount: outputFiles.length,
+      outputCount: outputItems.length,
     });
+    return true;
+  }
+
+  if (request.method === "GET" && requestUrl.pathname === "/api/outputs") {
+    sendJson(response, 200, { items: getOutputItems() });
     return true;
   }
 
