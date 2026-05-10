@@ -59,6 +59,49 @@ function loadConfig() {
   }
 }
 
+function saveConfigPatch(patch) {
+  const configDir = path.join(projectRoot, "config");
+  const configPath = path.join(configDir, "content-machine-config.json");
+  const examplePath = path.join(configDir, "content-machine-config.example.json");
+  fs.mkdirSync(configDir, { recursive: true });
+
+  let config = {};
+  if (fs.existsSync(configPath)) {
+    config = loadConfig();
+  } else if (fs.existsSync(examplePath)) {
+    config = JSON.parse(fs.readFileSync(examplePath, "utf8"));
+  }
+
+  const allowedFields = [
+    "borapostar_api_key",
+    "instagram_username",
+    "gemini_api_key",
+    "youtube_channel_id",
+    "scrapecreators_api_key",
+  ];
+
+  for (const field of allowedFields) {
+    if (Object.prototype.hasOwnProperty.call(patch, field)) {
+      config[field] = String(patch[field] || "").trim();
+    }
+  }
+
+  fs.writeFileSync(configPath, `${JSON.stringify(config, null, 2)}\n`, "utf8");
+  return config;
+}
+
+function maskSecret(value) {
+  if (!value) {
+    return "";
+  }
+
+  if (value.length <= 8) {
+    return "configurada";
+  }
+
+  return `${value.slice(0, 4)}...${value.slice(-4)}`;
+}
+
 function buildBriefingMarkdown(data) {
   return `# Briefing ViralRadar
 
@@ -113,8 +156,26 @@ async function handleApi(request, response, requestUrl) {
       borapostarApiKey: Boolean(config.borapostar_api_key),
       instagramUsername: config.instagram_username || "",
       geminiApiKey: Boolean(config.gemini_api_key),
+      geminiApiKeyMasked: maskSecret(config.gemini_api_key),
       outputCount: outputFiles.length,
     });
+    return true;
+  }
+
+  if (request.method === "POST" && requestUrl.pathname === "/api/config") {
+    try {
+      const payload = JSON.parse(await readBody(request));
+      const config = saveConfigPatch(payload);
+      sendJson(response, 200, {
+        saved: true,
+        borapostarApiKey: Boolean(config.borapostar_api_key),
+        instagramUsername: config.instagram_username || "",
+        geminiApiKey: Boolean(config.gemini_api_key),
+        geminiApiKeyMasked: maskSecret(config.gemini_api_key),
+      });
+    } catch (error) {
+      sendJson(response, 500, { error: error.message });
+    }
     return true;
   }
 

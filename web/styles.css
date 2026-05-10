@@ -538,6 +538,18 @@ select:focus {
   gap: 14px;
 }
 
+.settings-card-wide {
+  grid-column: 1 / -1;
+}
+
+.settings-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: end;
+  margin-top: 16px;
+}
+
 dl {
   display: grid;
   gap: 12px;
@@ -610,7 +622,8 @@ dd {
   .trend-grid,
   .kanban,
   .composer-layout,
-  .settings-grid {
+  .settings-grid,
+  .settings-form {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -660,6 +673,7 @@ dd {
   .kanban,
   .composer-layout,
   .settings-grid,
+  .settings-form,
   .calendar-grid {
     grid-template-columns: 1fr;
   }

@@ -53,6 +53,8 @@ node web\server.js
 
 O app inclui radar de tendencias, pipeline de conteudo, gerador de briefing, calendario editorial e tela de configuracoes.
 
+Na tela `Config`, cole a Gemini API Key para salvar localmente em `config/content-machine-config.json`. Esse arquivo e ignorado pelo Git.
+
 ## Fluxo recomendado
 
 1. Codex pesquisa/escreve o conteudo e salva um briefing em `outputs/`.

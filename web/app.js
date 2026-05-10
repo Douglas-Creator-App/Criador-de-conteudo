@@ -101,11 +101,40 @@ async function refreshStatus() {
   try {
     const status = await apiRequest("/api/status");
     qs("#carouselStatus").textContent = status.borapostarApiKey ? "Configurada" : "Aguardando API key";
+    qs("#geminiStatus").textContent = status.geminiApiKey ? status.geminiApiKeyMasked : "Aguardando API key";
+    qs("#instagramUsername").value = status.instagramUsername || "";
     qs("#draftCount").textContent = String(status.outputCount);
     qs("#supabaseStatus").textContent = status.supabaseProjectRef ? "Conectado" : "Nao conectado";
     qs("#readyCount").textContent = String(status.outputCount);
   } catch (error) {
     showToast(`Status indisponivel: ${error.message}`);
+  }
+}
+
+async function saveConfig(event) {
+  event.preventDefault();
+
+  const geminiKey = qs("#geminiApiKey").value.trim();
+  const instagramUsername = qs("#instagramUsername").value.trim();
+
+  try {
+    const payload = {};
+    if (geminiKey) {
+      payload.gemini_api_key = geminiKey;
+    }
+    payload.instagram_username = instagramUsername;
+
+    const result = await apiRequest("/api/config", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+
+    qs("#geminiApiKey").value = "";
+    qs("#geminiStatus").textContent = result.geminiApiKey ? result.geminiApiKeyMasked : "Aguardando API key";
+    qs("#carouselStatus").textContent = result.borapostarApiKey ? "Configurada" : "Aguardando API key";
+    showToast("Configuracao salva localmente.");
+  } catch (error) {
+    showToast(`Nao consegui salvar: ${error.message}`);
   }
 }
 
@@ -319,6 +348,7 @@ qsa(".segment").forEach((button) => {
 });
 
 qs("#briefForm").addEventListener("submit", buildBrief);
+qs("#configForm").addEventListener("submit", saveConfig);
 qs("#themeToggle").addEventListener("click", () => setTheme(state.theme === "dark" ? "light" : "dark"));
 
 setTheme(state.theme);

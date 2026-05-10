@@ -178,9 +178,24 @@
               <dl>
                 <div><dt>Supabase</dt><dd id="supabaseStatus">Conectado</dd></div>
                 <div><dt>Carousel API</dt><dd id="carouselStatus">Checando</dd></div>
+                <div><dt>Gemini API</dt><dd id="geminiStatus">Checando</dd></div>
                 <div><dt>Browser Use</dt><dd>Disponivel no Codex</dd></div>
                 <div><dt>Rascunhos locais</dt><dd id="draftCount">0</dd></div>
               </dl>
+            </article>
+            <article class="settings-card settings-card-wide">
+              <h3>Chaves locais</h3>
+              <form class="settings-form" id="configForm">
+                <label>
+                  Gemini API Key
+                  <input id="geminiApiKey" name="gemini_api_key" type="password" placeholder="AIzaSy...">
+                </label>
+                <label>
+                  Instagram
+                  <input id="instagramUsername" name="instagram_username" type="text" placeholder="@seuusuario">
+                </label>
+                <button class="primary-button" type="submit">Salvar configuracao</button>
+              </form>
             </article>
           </div>
         </section>
