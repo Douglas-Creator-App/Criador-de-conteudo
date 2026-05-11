@@ -48,6 +48,7 @@ const state = {
   theme: localStorage.getItem("viralradar-theme") || "dark",
   toastTimer: null,
   outputs: [],
+  studioSlides: [],
 };
 
 const qs = (selector) => document.querySelector(selector);
@@ -422,49 +423,199 @@ async function renderStudioSlides() {
     const output = await apiRequest(`/api/outputs/${encodeURIComponent(fileName)}`);
     const style = qs("#studioStyle").value;
     const slides = parseSlides(output.markdown);
-    qs("#slidesStage").innerHTML = slides.map((slide) => `
-      <article class="slide-card" data-style="${style}">
-        <div class="slide-art"></div>
-        <div class="slide-overlay"></div>
-        <div class="slide-content">
-          <div class="slide-kicker">ViralRadar / ${String(slide.number).padStart(2, "0")}</div>
-          <h3 class="slide-title">${escapeHtml(slide.title)}</h3>
-          <p class="slide-body">${escapeHtml(slide.body)}</p>
-          <div class="slide-footer"><span>viralradar.ai</span><span>share score</span></div>
-        </div>
-      </article>
-    `).join("");
+    state.studioSlides = slides;
+    renderSlideEditors();
+    renderSlideCanvases(style);
     showToast("Preview visual gerado.");
   } catch (error) {
     showToast(`Nao consegui gerar preview: ${error.message}`);
   }
 }
 
+function renderSlideEditors() {
+  qs("#slidesEditor").innerHTML = state.studioSlides.map((slide, index) => `
+    <div class="slide-editor-item">
+      <strong>Slide ${slide.number}</strong>
+      <input data-slide-title="${index}" value="${escapeHtml(slide.title)}" aria-label="Titulo do slide ${slide.number}">
+      <textarea data-slide-body="${index}" aria-label="Texto do slide ${slide.number}">${escapeHtml(slide.body)}</textarea>
+    </div>
+  `).join("");
+
+  qsa("[data-slide-title], [data-slide-body]").forEach((field) => {
+    field.addEventListener("input", updateSlidesFromEditor);
+  });
+}
+
+function updateSlidesFromEditor() {
+  qsa("[data-slide-title]").forEach((field) => {
+    state.studioSlides[Number(field.dataset.slideTitle)].title = field.value;
+  });
+  qsa("[data-slide-body]").forEach((field) => {
+    state.studioSlides[Number(field.dataset.slideBody)].body = field.value;
+  });
+  renderSlideCanvases(qs("#studioStyle").value);
+}
+
+function renderSlideCanvases(style) {
+  qs("#slidesStage").innerHTML = state.studioSlides.map((slide, index) => `
+    <article class="slide-card" data-style="${style}">
+      <canvas width="1080" height="1350" data-slide-canvas="${index}" aria-label="Slide ${slide.number}"></canvas>
+    </article>
+  `).join("");
+
+  qsa("[data-slide-canvas]").forEach((canvas) => {
+    const index = Number(canvas.dataset.slideCanvas);
+    drawSlide(canvas, state.studioSlides[index], style);
+  });
+}
+
+function drawSlide(canvas, slide, style) {
+  const ctx = canvas.getContext("2d");
+  const width = canvas.width;
+  const height = canvas.height;
+  const palette = getSlidePalette(style);
+
+  const gradient = ctx.createLinearGradient(0, 0, width, height);
+  gradient.addColorStop(0, palette.bg1);
+  gradient.addColorStop(0.58, palette.bg2);
+  gradient.addColorStop(1, palette.bg3);
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, width, height);
+
+  drawVisualMotif(ctx, width, height, palette, slide.number);
+
+  const overlay = ctx.createLinearGradient(0, 0, 0, height);
+  overlay.addColorStop(0, palette.overlayTop);
+  overlay.addColorStop(1, palette.overlayBottom);
+  ctx.fillStyle = overlay;
+  ctx.fillRect(0, 0, width, height);
+
+  ctx.fillStyle = palette.kicker;
+  ctx.font = "900 34px Arial";
+  ctx.letterSpacing = "0px";
+  ctx.fillText(`VIRALRADAR / ${String(slide.number).padStart(2, "0")}`, 78, 98);
+
+  ctx.fillStyle = palette.text;
+  drawWrappedText(ctx, slide.title, 78, 650, 920, 82, "900 78px Arial", 5);
+
+  ctx.fillStyle = palette.body;
+  drawWrappedText(ctx, slide.body, 78, 930, 880, 44, "700 42px Arial", 5);
+
+  ctx.fillStyle = palette.footer;
+  ctx.font = "800 28px Arial";
+  ctx.fillText("viralradar.ai", 78, 1255);
+  ctx.textAlign = "right";
+  ctx.fillText("share score", width - 78, 1255);
+  ctx.textAlign = "left";
+}
+
+function getSlidePalette(style) {
+  if (style === "clean") {
+    return {
+      bg1: "#fff8f2",
+      bg2: "#f6f7f9",
+      bg3: "#ffd8bf",
+      accent: "#ff8a3d",
+      text: "#111827",
+      body: "#26313d",
+      kicker: "#c45112",
+      footer: "#c45112",
+      overlayTop: "rgba(255,255,255,0.02)",
+      overlayBottom: "rgba(255,255,255,0.72)",
+    };
+  }
+
+  if (style === "sunset") {
+    return {
+      bg1: "#331006",
+      bg2: "#c24d1a",
+      bg3: "#ffb35b",
+      accent: "#ffeeb8",
+      text: "#ffffff",
+      body: "#fff1e7",
+      kicker: "#ffeeb8",
+      footer: "rgba(255,255,255,0.78)",
+      overlayTop: "rgba(0,0,0,0.04)",
+      overlayBottom: "rgba(0,0,0,0.54)",
+    };
+  }
+
+  return {
+    bg1: "#160c06",
+    bg2: "#3a1d0b",
+    bg3: "#ff8a3d",
+    accent: "#ffcc66",
+    text: "#ffffff",
+    body: "#fff1e7",
+    kicker: "#ffcc66",
+    footer: "rgba(255,255,255,0.78)",
+    overlayTop: "rgba(0,0,0,0.08)",
+    overlayBottom: "rgba(0,0,0,0.62)",
+  };
+}
+
+function drawVisualMotif(ctx, width, height, palette, seed) {
+  ctx.save();
+  ctx.globalAlpha = 0.78;
+  ctx.fillStyle = palette.accent;
+  ctx.beginPath();
+  ctx.arc(width * 0.76, height * 0.18, 160 + seed * 7, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.globalAlpha = 0.25;
+  ctx.strokeStyle = palette.accent;
+  ctx.lineWidth = 4;
+  for (let i = 0; i < 5; i += 1) {
+    ctx.beginPath();
+    ctx.arc(width * 0.74, height * 0.24, 220 + i * 85, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  ctx.globalAlpha = 0.42;
+  ctx.fillStyle = "#ff6b7a";
+  ctx.beginPath();
+  ctx.arc(width * 0.16, height * 0.74, 180, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawWrappedText(ctx, text, x, y, maxWidth, lineHeight, font, maxLines) {
+  ctx.font = font;
+  const words = String(text || "").split(/\s+/);
+  let line = "";
+  let lines = [];
+
+  words.forEach((word) => {
+    const testLine = line ? `${line} ${word}` : word;
+    if (ctx.measureText(testLine).width > maxWidth && line) {
+      lines.push(line);
+      line = word;
+    } else {
+      line = testLine;
+    }
+  });
+  if (line) lines.push(line);
+
+  lines = lines.slice(0, maxLines);
+  lines.forEach((item, index) => {
+    ctx.fillText(item, x, y + index * lineHeight);
+  });
+}
+
 function exportSlides() {
-  const slides = qsa(".slide-card");
-  if (!slides.length) {
+  const canvases = qsa("[data-slide-canvas]");
+  if (!canvases.length) {
     showToast("Gere o preview antes de exportar.");
     return;
   }
 
-  const oldPrintStyle = document.getElementById("printSlidesStyle");
-  if (oldPrintStyle) {
-    oldPrintStyle.remove();
-  }
-
-  const style = document.createElement("style");
-  style.id = "printSlidesStyle";
-  style.textContent = `
-    @media print {
-      body * { visibility: hidden; }
-      #slidesStage, #slidesStage * { visibility: visible; }
-      #slidesStage { position: absolute; inset: 0; display: block; }
-      .slide-card { page-break-after: always; width: 1080px; height: 1350px; margin: 0; }
-    }
-  `;
-  document.head.appendChild(style);
-  window.print();
-  showToast("Use a janela de impressao para salvar o material.");
+  canvases.forEach((canvas, index) => {
+    const link = document.createElement("a");
+    link.download = `viralradar-slide-${String(index + 1).padStart(2, "0")}.png`;
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+  });
+  showToast("PNGs gerados.");
 }
 
 function setView(viewName) {

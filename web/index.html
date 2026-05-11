@@ -184,7 +184,7 @@
             </div>
             <div class="topbar-actions">
               <button class="secondary-button" id="renderSlidesButton" type="button">Gerar preview</button>
-              <button class="primary-button" id="exportSlidesButton" type="button">Exportar</button>
+              <button class="primary-button" id="exportSlidesButton" type="button">Baixar PNGs</button>
             </div>
           </div>
           <div class="studio-layout">
@@ -205,7 +205,8 @@
                 Imagem/tema base
                 <input id="studioImagePrompt" type="text" placeholder="Ex: creator analisando tendências em uma tela">
               </label>
-              <p class="field-note">Primeira versão: texto + fundo visual no navegador. Próximo passo: gerar imagens por slide com Gemini Image.</p>
+              <div class="studio-editor" id="slidesEditor"></div>
+              <p class="field-note">O Estúdio gera PNGs reais no navegador usando canvas. Próximo passo: imagens específicas por slide com Gemini Image.</p>
             </aside>
             <div class="slides-stage" id="slidesStage"></div>
           </div>

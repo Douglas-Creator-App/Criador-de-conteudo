@@ -534,6 +534,8 @@ body.light .hero-metrics {
   display: grid;
   gap: 14px;
   align-self: start;
+  max-height: calc(100vh - 220px);
+  overflow-y: auto;
 }
 
 .slides-stage {
@@ -552,6 +554,12 @@ body.light .hero-metrics {
   background: #160c06;
   color: #ffffff;
   box-shadow: var(--shadow);
+}
+
+.slide-card canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
 .slide-art {
@@ -631,6 +639,30 @@ body.light .hero-metrics {
 .slide-card[data-style="clean"] .slide-footer,
 .slide-card[data-style="clean"] .slide-kicker {
   color: #c45112;
+}
+
+.studio-editor {
+  display: grid;
+  gap: 10px;
+}
+
+.slide-editor-item {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px;
+  background: var(--panel-2);
+  display: grid;
+  gap: 8px;
+}
+
+.slide-editor-item strong {
+  font-size: 12px;
+  color: var(--accent);
+  text-transform: uppercase;
+}
+
+.slide-editor-item textarea {
+  min-height: 74px;
 }
 
 .composer-form,
