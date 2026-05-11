@@ -444,16 +444,21 @@ body.light .hero-metrics {
 
 .kanban {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(5, minmax(150px, 1fr));
+  align-items: start;
+  gap: 10px;
 }
 
 .kanban-column {
-  min-height: 420px;
-  padding: 12px;
+  min-height: 520px;
+  max-height: calc(100vh - 250px);
+  padding: 10px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: color-mix(in srgb, var(--panel) 78%, transparent);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
 
 .kanban-column.drag-over {
@@ -462,15 +467,21 @@ body.light .hero-metrics {
 }
 
 .kanban-column h3 {
-  margin: 4px 4px 12px;
-  font-size: 14px;
+  margin: 4px 4px 10px;
+  font-size: 12px;
   color: var(--muted);
   text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.kanban-dropzone {
+  overflow-y: auto;
+  padding-right: 2px;
 }
 
 .pipeline-card {
-  padding: 14px;
-  margin-bottom: 10px;
+  padding: 10px;
+  margin-bottom: 8px;
   cursor: pointer;
   transition: border-color 160ms ease, transform 160ms ease;
 }
@@ -480,7 +491,8 @@ body.light .hero-metrics {
 }
 
 .pipeline-card h3 {
-  font-size: 15px;
+  font-size: 13px;
+  line-height: 1.25;
 }
 
 .pipeline-card:hover {
@@ -502,6 +514,7 @@ body.light .hero-metrics {
   color: var(--muted);
   line-height: 1.5;
   margin: 8px 4px;
+  font-size: 13px;
 }
 
 .composer-layout {
