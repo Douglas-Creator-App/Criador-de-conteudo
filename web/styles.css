@@ -456,6 +456,11 @@ body.light .hero-metrics {
   background: color-mix(in srgb, var(--panel) 78%, transparent);
 }
 
+.kanban-column.drag-over {
+  border-color: color-mix(in srgb, var(--accent) 76%, var(--line));
+  background: color-mix(in srgb, var(--panel-2) 88%, var(--accent) 12%);
+}
+
 .kanban-column h3 {
   margin: 4px 4px 12px;
   font-size: 14px;
@@ -470,6 +475,10 @@ body.light .hero-metrics {
   transition: border-color 160ms ease, transform 160ms ease;
 }
 
+.pipeline-card.dragging {
+  opacity: 0.55;
+}
+
 .pipeline-card h3 {
   font-size: 15px;
 }
@@ -477,6 +486,16 @@ body.light .hero-metrics {
 .pipeline-card:hover {
   border-color: color-mix(in srgb, var(--accent) 70%, var(--line));
   transform: translateY(-1px);
+}
+
+.danger-button {
+  min-height: 36px;
+  border: 1px solid color-mix(in srgb, var(--accent-3) 55%, var(--line));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--panel-2) 78%, var(--accent-3) 22%);
+  color: var(--text);
+  font-weight: 800;
+  padding: 0 12px;
 }
 
 .empty-column {

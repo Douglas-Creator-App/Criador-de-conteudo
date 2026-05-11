@@ -7,6 +7,7 @@ const projectRoot = path.join(root, "..");
 const port = Number(process.env.PORT || 4173);
 const geminiModel = "gemini-2.5-flash";
 const calendarPath = path.join(projectRoot, "config", "calendar.json");
+const pipelineStatePath = path.join(projectRoot, "config", "pipeline-state.json");
 
 const types = {
   ".html": "text/html; charset=utf-8",
@@ -245,6 +246,7 @@ function titleFromMarkdown(markdown, fileName) {
 }
 
 function getOutputItems() {
+  const pipelineState = loadPipelineState();
   const outputsDir = path.join(projectRoot, "outputs");
   if (!fs.existsSync(outputsDir)) {
     return [];
@@ -258,17 +260,35 @@ function getOutputItems() {
       const markdown = fs.readFileSync(filePath, "utf8");
       const isCarousel = name.includes("carousel") || /^# Carrossel/m.test(markdown);
       const statusMatch = markdown.match(/^Status:\s*(.+)$/m);
+      const fallbackStatus = statusMatch ? statusMatch[1].trim() : isCarousel ? "gerado" : "rascunho";
       return {
         name,
         title: titleFromMarkdown(markdown, name),
         type: isCarousel ? "Carrossel" : "Briefing",
-        status: statusMatch ? statusMatch[1].trim() : isCarousel ? "gerado" : "rascunho",
+        status: pipelineState[name] || fallbackStatus,
         size: stat.size,
         updatedAt: stat.mtime.toISOString(),
         preview: markdown.replace(/\s+/g, " ").trim().slice(0, 160),
       };
     })
     .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+}
+
+function loadPipelineState() {
+  if (!fs.existsSync(pipelineStatePath)) {
+    return {};
+  }
+
+  try {
+    return JSON.parse(fs.readFileSync(pipelineStatePath, "utf8"));
+  } catch {
+    return {};
+  }
+}
+
+function savePipelineState(state) {
+  fs.mkdirSync(path.dirname(pipelineStatePath), { recursive: true });
+  fs.writeFileSync(pipelineStatePath, `${JSON.stringify(state, null, 2)}\n`, "utf8");
 }
 
 function safeOutputPath(fileName) {
@@ -410,6 +430,52 @@ async function handleApi(request, response, requestUrl) {
         username: payload.data && payload.data.username ? payload.data.username : "",
         email: payload.data && payload.data.email ? payload.data.email : "",
       });
+    } catch (error) {
+      sendJson(response, 500, { error: error.message });
+    }
+    return true;
+  }
+
+  if (request.method === "PATCH" && requestUrl.pathname.startsWith("/api/outputs/")) {
+    try {
+      const fileName = decodeURIComponent(requestUrl.pathname.replace("/api/outputs/", ""));
+      const filePath = safeOutputPath(fileName);
+      if (!filePath || !fs.existsSync(filePath)) {
+        sendJson(response, 404, { error: "Arquivo nao encontrado" });
+        return true;
+      }
+
+      const payload = JSON.parse(await readBody(request));
+      const status = String(payload.status || "").trim();
+      if (!status) {
+        sendJson(response, 400, { error: "Status obrigatorio" });
+        return true;
+      }
+
+      const state = loadPipelineState();
+      state[path.basename(filePath)] = status;
+      savePipelineState(state);
+      sendJson(response, 200, { saved: true, name: path.basename(filePath), status });
+    } catch (error) {
+      sendJson(response, 500, { error: error.message });
+    }
+    return true;
+  }
+
+  if (request.method === "DELETE" && requestUrl.pathname.startsWith("/api/outputs/")) {
+    try {
+      const fileName = decodeURIComponent(requestUrl.pathname.replace("/api/outputs/", ""));
+      const filePath = safeOutputPath(fileName);
+      if (!filePath || !fs.existsSync(filePath)) {
+        sendJson(response, 404, { error: "Arquivo nao encontrado" });
+        return true;
+      }
+
+      fs.unlinkSync(filePath);
+      const state = loadPipelineState();
+      delete state[path.basename(filePath)];
+      savePipelineState(state);
+      sendJson(response, 200, { deleted: true, name: path.basename(filePath) });
     } catch (error) {
       sendJson(response, 500, { error: error.message });
     }

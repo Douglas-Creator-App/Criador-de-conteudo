@@ -1,5 +1,6 @@
 config/content-machine-config.json
 config/calendar.json
+config/pipeline-state.json
 .env
 .env.*
 !.env.example

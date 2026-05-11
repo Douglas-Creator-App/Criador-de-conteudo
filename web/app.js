@@ -193,18 +193,25 @@ async function renderPipeline() {
     const { items } = await apiRequest("/api/outputs");
     state.outputs = items;
     renderStudioOptions();
-    const groups = {
-      "Briefings": items.filter((item) => item.type === "Briefing"),
-      "Carrosseis": items.filter((item) => item.type === "Carrossel"),
-      "Aprovacao": items.filter((item) => /aprov/i.test(item.status)),
-      "Recentes": items.slice(0, 6),
+    const columns = {
+      ideia: { label: "Ideias", cards: [] },
+      rascunho: { label: "Briefings", cards: [] },
+      gerado: { label: "Carrosseis", cards: [] },
+      aprovacao: { label: "Aprovacao", cards: [] },
+      publicado: { label: "Publicado", cards: [] },
     };
 
-    board.innerHTML = Object.entries(groups).map(([column, cards]) => `
-      <section class="kanban-column">
-        <h3>${column}</h3>
-        ${cards.length ? cards.map((card) => `
-          <article class="pipeline-card">
+    items.forEach((item) => {
+      const key = normalizePipelineStatus(item.status, item.type);
+      columns[key].cards.push(item);
+    });
+
+    board.innerHTML = Object.entries(columns).map(([status, column]) => `
+      <section class="kanban-column" data-status="${status}">
+        <h3>${column.label}</h3>
+        <div class="kanban-dropzone">
+        ${column.cards.length ? column.cards.map((card) => `
+          <article class="pipeline-card" draggable="true" data-file="${card.name}">
             <h3>${card.title}</h3>
             <p>${card.preview}</p>
             <div class="tag-row">
@@ -213,9 +220,11 @@ async function renderPipeline() {
             </div>
             <div class="card-actions">
               <button class="secondary-button view-output-button" data-file="${card.name}" type="button">Visualizar</button>
+              <button class="danger-button delete-output-button" data-file="${card.name}" type="button">Excluir</button>
             </div>
           </article>
         `).join("") : `<p class="empty-column">Nada aqui ainda.</p>`}
+        </div>
       </section>
     `).join("");
 
@@ -225,8 +234,81 @@ async function renderPipeline() {
         openOutput(button.dataset.file);
       });
     });
+    qsa(".delete-output-button").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.stopPropagation();
+        deleteOutput(button.dataset.file);
+      });
+    });
+    wireKanbanDragAndDrop();
   } catch (error) {
     board.innerHTML = `<section class="kanban-column"><h3>Erro</h3><p class="empty-column">${error.message}</p></section>`;
+  }
+}
+
+function normalizePipelineStatus(status, type) {
+  const value = String(status || "").toLowerCase();
+  if (value.includes("public")) return "publicado";
+  if (value.includes("aprov")) return "aprovacao";
+  if (value.includes("ideia")) return "ideia";
+  if (value.includes("gerado") || type === "Carrossel") return "gerado";
+  return "rascunho";
+}
+
+function wireKanbanDragAndDrop() {
+  qsa(".pipeline-card").forEach((card) => {
+    card.addEventListener("dragstart", (event) => {
+      card.classList.add("dragging");
+      event.dataTransfer.setData("text/plain", card.dataset.file);
+      event.dataTransfer.effectAllowed = "move";
+    });
+    card.addEventListener("dragend", () => card.classList.remove("dragging"));
+  });
+
+  qsa(".kanban-column").forEach((column) => {
+    column.addEventListener("dragover", (event) => {
+      event.preventDefault();
+      column.classList.add("drag-over");
+    });
+    column.addEventListener("dragleave", () => column.classList.remove("drag-over"));
+    column.addEventListener("drop", async (event) => {
+      event.preventDefault();
+      column.classList.remove("drag-over");
+      const fileName = event.dataTransfer.getData("text/plain");
+      const status = column.dataset.status;
+      if (fileName && status) {
+        await moveOutput(fileName, status);
+      }
+    });
+  });
+}
+
+async function moveOutput(fileName, status) {
+  try {
+    await apiRequest(`/api/outputs/${encodeURIComponent(fileName)}`, {
+      method: "PATCH",
+      body: JSON.stringify({ status }),
+    });
+    showToast("Card movido.");
+    renderPipeline();
+  } catch (error) {
+    showToast(`Nao consegui mover: ${error.message}`);
+  }
+}
+
+async function deleteOutput(fileName) {
+  const confirmed = window.confirm("Excluir este conteudo do Pipeline? Essa acao apaga o arquivo local.");
+  if (!confirmed) {
+    return;
+  }
+
+  try {
+    await apiRequest(`/api/outputs/${encodeURIComponent(fileName)}`, { method: "DELETE" });
+    showToast("Conteudo excluido.");
+    renderPipeline();
+    refreshStatus();
+  } catch (error) {
+    showToast(`Nao consegui excluir: ${error.message}`);
   }
 }
 
