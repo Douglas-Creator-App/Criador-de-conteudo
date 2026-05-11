@@ -8,6 +8,7 @@ const port = Number(process.env.PORT || 4173);
 const geminiModel = "gemini-2.5-flash";
 const calendarPath = path.join(projectRoot, "config", "calendar.json");
 const pipelineStatePath = path.join(projectRoot, "config", "pipeline-state.json");
+const boraPostarBase = "https://xxhixkptbggbjqdmebwc.supabase.co/functions/v1/carousel-api";
 
 const types = {
   ".html": "text/html; charset=utf-8",
@@ -274,6 +275,31 @@ function getOutputItems() {
     .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
 }
 
+async function callBoraPostar(apiKey, pathName, options = {}) {
+  const response = await fetch(`${boraPostarBase}${pathName}`, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      "X-API-Key": apiKey,
+      ...(options.headers || {}),
+    },
+  });
+
+  const text = await response.text();
+  let payload;
+  try {
+    payload = text ? JSON.parse(text) : {};
+  } catch {
+    payload = { raw: text };
+  }
+
+  if (!response.ok) {
+    throw new Error(payload.error || payload.message || `BoraPostar HTTP ${response.status}`);
+  }
+
+  return payload;
+}
+
 function loadPipelineState() {
   if (!fs.existsSync(pipelineStatePath)) {
     return {};
@@ -436,6 +462,38 @@ async function handleApi(request, response, requestUrl) {
     return true;
   }
 
+  if (request.method === "GET" && requestUrl.pathname === "/api/borapostar/list") {
+    try {
+      const config = loadConfig();
+      if (!config.borapostar_api_key) {
+        sendJson(response, 400, { error: "BoraPostar API key nao configurada" });
+        return true;
+      }
+
+      const payload = await callBoraPostar(config.borapostar_api_key, "/agent/listar", { method: "GET" });
+      sendJson(response, 200, payload);
+    } catch (error) {
+      sendJson(response, 500, { error: error.message });
+    }
+    return true;
+  }
+
+  if (request.method === "GET" && requestUrl.pathname === "/api/borapostar/latest") {
+    try {
+      const config = loadConfig();
+      if (!config.borapostar_api_key) {
+        sendJson(response, 400, { error: "BoraPostar API key nao configurada" });
+        return true;
+      }
+
+      const payload = await callBoraPostar(config.borapostar_api_key, "/agent/ultimo", { method: "GET" });
+      sendJson(response, 200, payload);
+    } catch (error) {
+      sendJson(response, 500, { error: error.message });
+    }
+    return true;
+  }
+
   if (request.method === "PATCH" && requestUrl.pathname.startsWith("/api/outputs/")) {
     try {
       const fileName = decodeURIComponent(requestUrl.pathname.replace("/api/outputs/", ""));
@@ -553,6 +611,45 @@ async function handleApi(request, response, requestUrl) {
         fileName,
         filePath,
         markdown,
+      });
+    } catch (error) {
+      sendJson(response, 500, { error: error.message });
+    }
+    return true;
+  }
+
+  if (request.method === "POST" && requestUrl.pathname === "/api/borapostar/generate") {
+    try {
+      const config = loadConfig();
+      if (!config.borapostar_api_key) {
+        sendJson(response, 400, { error: "BoraPostar API key nao configurada" });
+        return true;
+      }
+
+      const payload = JSON.parse(await readBody(request));
+      const topic = String(payload.topic || "").trim();
+      if (!topic) {
+        sendJson(response, 400, { error: "Tema obrigatorio" });
+        return true;
+      }
+
+      const briefing = buildBriefingMarkdown({
+        topic,
+        platform: String(payload.platform || "Instagram carrossel"),
+        audience: String(payload.audience || "creators, agencias e infoprodutores"),
+        angle: String(payload.angle || "Case real + estrategia contraintuitiva + dado concreto"),
+        viralLevel: Number(payload.viralLevel || 8),
+        approvalRequired: true,
+      });
+
+      const result = await callBoraPostar(config.borapostar_api_key, "/agent/gerar", {
+        method: "POST",
+        body: JSON.stringify({ topic: briefing }),
+      });
+
+      sendJson(response, 201, {
+        submitted: true,
+        result,
       });
     } catch (error) {
       sendJson(response, 500, { error: error.message });

@@ -573,6 +573,68 @@ async function generateCarousel() {
   }
 }
 
+async function generateWithBoraPostar() {
+  const topic = qs("#briefTopic").value.trim();
+  const platform = qs("#briefPlatform").value;
+  const audience = qs("#briefAudience").value.trim() || "creators, agencias e infoprodutores";
+  const angle = qs("#briefAngle").value.trim() || "Case real + estrategia contraintuitiva + dado concreto";
+  const viralLevel = qs("#viralLevel").value;
+
+  if (!topic) {
+    showToast("Informe um tema antes de gerar.");
+    setView("composer");
+    qs("#briefTopic").focus();
+    return;
+  }
+
+  const button = qs("#generateBoraPostarButton");
+  button.disabled = true;
+  button.textContent = "Enviando...";
+  showToast("Enviando para BoraPostar.");
+
+  try {
+    const result = await apiRequest("/api/borapostar/generate", {
+      method: "POST",
+      body: JSON.stringify({ topic, platform, audience, angle, viralLevel }),
+    });
+
+    qs("#briefPreview").innerHTML = `
+      <p class="eyebrow">BoraPostar</p>
+      <h3>${topic}</h3>
+      <p>Carrossel enviado para processamento.</p>
+      <pre class="generated-output">${escapeHtml(JSON.stringify(result.result, null, 2))}</pre>
+      <div class="preview-actions">
+        <button class="secondary-button" id="checkBoraPostarButton" type="button">Ver status</button>
+      </div>
+    `;
+    qs("#checkBoraPostarButton").addEventListener("click", checkBoraPostarLatest);
+    showToast("BoraPostar recebeu o briefing.");
+  } catch (error) {
+    showToast(`BoraPostar falhou: ${error.message}`);
+  } finally {
+    const freshButton = qs("#generateBoraPostarButton");
+    if (freshButton) {
+      freshButton.disabled = false;
+      freshButton.textContent = "Gerar com BoraPostar";
+    }
+  }
+}
+
+async function checkBoraPostarLatest() {
+  try {
+    const result = await apiRequest("/api/borapostar/latest");
+    qs("#briefPreview").innerHTML = `
+      <p class="eyebrow">Status BoraPostar</p>
+      <h3>${result.status || "Resultado"}</h3>
+      ${result.editor_url ? `<p><strong>Editor:</strong> <a href="${result.editor_url}" target="_blank" rel="noreferrer">${result.editor_url}</a></p>` : ""}
+      <pre class="generated-output">${escapeHtml(JSON.stringify(result, null, 2))}</pre>
+    `;
+    showToast("Status atualizado.");
+  } catch (error) {
+    showToast(`Nao consegui verificar: ${error.message}`);
+  }
+}
+
 function escapeHtml(value) {
   return String(value)
     .replace(/&/g, "&amp;")
@@ -673,6 +735,7 @@ qs("#briefForm").addEventListener("submit", buildBrief);
 qs("#configForm").addEventListener("submit", saveConfig);
 qs("#testApifyButton").addEventListener("click", testApifyConnection);
 qs("#generateCarouselButton").addEventListener("click", generateCarousel);
+qs("#generateBoraPostarButton").addEventListener("click", generateWithBoraPostar);
 qs("#themeToggle").addEventListener("click", () => setTheme(state.theme === "dark" ? "light" : "dark"));
 qs("#saveCalendarButton").addEventListener("click", saveCalendar);
 qs("#closeDialogButton").addEventListener("click", () => qs("#contentDialog").close());
